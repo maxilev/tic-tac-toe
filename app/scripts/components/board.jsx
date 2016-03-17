@@ -1,6 +1,8 @@
 import React, { Component, PropTypes } from 'react';
 import classNames from 'classnames';
 
+import Game from 'utils/game';
+
 class Board extends Component {
 
   static propTypes = {
@@ -14,25 +16,22 @@ class Board extends Component {
   constructor(props, context) {
     super(props, context);
 
-    const { size } = props;
     this.state = {
-      board: Array(size * size).fill(null)
+      game: new Game()
     };
   }
 
-  _mark(idx, value) {
-    const { board } = this.state;
-
-    if (board[idx]) {
-      return;
-    }
-
-    board[idx] = value;
-    this.setState({ board });
+  _play(idx) {
+    const { game } = this.state;
+    game.play(idx);
+    this.setState({ game });
   }
 
   render() {
     const { size } = this.props;
+    const { game } = this.state;
+    const prize = game.prize();
+
     const rows = Array(size).fill(null).map((value, idx) => {
       return this.renderRow(idx);
     });
@@ -41,7 +40,13 @@ class Board extends Component {
       <div className='container'>
         <div className='row'>
           <div className='board col-lg-6 col-lg-offset-3 col-sm-8 col-sm-offset-2 col-xs-12'>
-            { rows }
+            <div className={ classNames('alert alert-danger text-center', { hidden: !prize }) } role='alert'>
+              You lost!
+            </div>
+
+            <div className='board-rows'>
+              { rows }
+            </div>
           </div>
         </div>
       </div>
@@ -62,19 +67,20 @@ class Board extends Component {
   }
 
   renderCell(idx) {
-    const { board } = this.state;
+    const { game } = this.state;
+    const state = game.state(idx);
 
     return (
       <div key={ idx } className='col-xs-4'>
         <span
           className={
             classNames('board-cell', {
-              blank: !board[idx],
-              cross: board[idx] === 'cross',
-              zero: board[idx] === 'zero'
+              blank: !state,
+              cross: state === 'x',
+              zero: state === 'o'
             })
           }
-          onClick={ this._mark.bind(this, idx, 'cross') }
+          onClick={ this._play.bind(this, idx) }
         ></span>
       </div>
     );

@@ -6,7 +6,7 @@ describe('Board', () => {
   let component;
 
   beforeEach(() => {
-    component = TestUtils.renderIntoDocument(<Board size={ 3 } />);
+    component = TestUtils.renderIntoDocument(<Board size={ size } />);
   });
 
   it('renders board component', () => {
@@ -24,15 +24,13 @@ describe('Board', () => {
     expect(cells.length).to.equal(size * size);
   });
 
-  it('marks cell with given value if cell is available', () => {
-    const { board } = component.state;
+  it('marks cell with human value if cell is available', () => {
+    const { game } = component.state;
     const idx = 0;
-    const value = 'cross';
+    const value = 'x';
 
-    expect(board[idx]).to.equal(null);
-    component._mark(idx, value);
-    expect(board[idx]).to.equal(value);
-    component._mark(idx, 'zero');
-    expect(board[idx]).to.equal(value);
+    expect(game.state(idx)).to.equal(null);
+    component._play(idx);
+    expect(game.state(idx)).to.equal(value);
   });
 });
