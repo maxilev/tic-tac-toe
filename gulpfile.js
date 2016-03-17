@@ -17,6 +17,7 @@ gulp.task('compile-styles', function() {
       indentedSyntax: false,
       errLogToConsole: true
     }))
+    .pipe(config.production ? $.cssnano() : $.util.noop())
     .pipe(gulp.dest(config.assets + '/styles'))
     .pipe($.size());
 });
