@@ -1,4 +1,4 @@
-import { React, TestUtils, expect } from 'spec_helper';
+import { React, TestUtils, expect } from 'support/spec_helper';
 import Board from 'components/board';
 
 describe('Board', () => {

@@ -1,0 +1,4 @@
+--require ./spec/javascripts/support/setup
+--full-trace
+--compilers js:babel-core/register
+--recursive ./spec/javascripts/**/*.jsx

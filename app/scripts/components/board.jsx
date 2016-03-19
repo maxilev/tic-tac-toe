@@ -1,5 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import classNames from 'classnames';
+import request from 'superagent';
 
 class Board extends Component {
 
@@ -28,12 +29,14 @@ class Board extends Component {
       board: Array(size * size).fill('blank'),
       current: Object.keys(Board.players)[0],
       mode: null,
-      modalVisible: false
+      modalVisible: false,
+      busy: false,
+      prize: null
     }
   }
 
-  _makeMove(idx) {
-    const { board, current } = this.state;
+  _makeMove(idx, type) {
+    const { board, current, mode } = this.state;
     const players = Object.keys(Board.players);
     const next = players[(players.indexOf(current) + 1) % players.length];
 
@@ -43,6 +46,49 @@ class Board extends Component {
 
     board[idx] = Board.players[current];
     this.setState({ board, current: next });
+
+    this._checkPrize(() => {
+      if (type === 'human' && mode === 'single') {
+        this._autoMove();
+      }
+    });
+  }
+
+  _autoMove() {
+    const { board } = this.state;
+
+    request
+      .get('/move')
+      .query({
+        board: JSON.stringify(board)
+      })
+      .end((err, res) => {
+        const { index } = res.body;
+        this._makeMove(index);
+      });
+
+    this.setState({ busy: true });
+  }
+
+  _checkPrize(callback) {
+    const { board } = this.state;
+
+    request
+      .get('/check')
+      .query({
+        board: JSON.stringify(board)
+      })
+      .end((err, res) => {
+        const { prize } = res.body;
+
+        if (parseInt(prize) !== prize) {
+          callback(this);
+        }
+
+        this.setState({ prize, busy: false });
+      });
+
+    this.setState({ busy: true });
   }
 
   _reset() {
@@ -73,7 +119,8 @@ class Board extends Component {
 
   renderBoard() {
     const { size } = this.props;
-    const { current, mode } = this.state;
+    const { current, mode, busy, prize } = this.state;
+    const disabled = !mode || (parseInt(prize) === prize);
 
     const rows = Array(size).fill(null).map((value, idx) => {
       return this.renderRow(idx);
@@ -81,7 +128,7 @@ class Board extends Component {
 
     return (
       <div className='row'>
-        <div className={ classNames('board-rows', `hover-${Board.players[current]}`, { disabled: !mode }) }>
+        <div className={ classNames('board-rows', `hover-${Board.players[current]}`, { disabled, busy }) }>
           { rows }
         </div>
       </div>
@@ -109,7 +156,7 @@ class Board extends Component {
       <div key={ idx } className='col-xs-4'>
         <span
           className={ classNames('board-cell', board[idx]) }
-          onClick={ this._makeMove.bind(this, idx) }
+          onClick={ this._makeMove.bind(this, idx, 'human') }
         ></span>
       </div>
     );
@@ -157,12 +204,20 @@ class Board extends Component {
   }
 
   renderAlerts() {
-    const { mode } = this.state;
+    const { mode, prize, current } = this.state;
 
     return (
       <div className='row text-center'>
         <div className={ classNames('alert alert-info', { hidden: !!mode }) } role='alert'>
-          Choose number of players to start
+          Choose number of players to start.
+        </div>
+
+        <div className={ classNames('alert alert-warning', { hidden: prize !== 0 }) } role='alert'>
+          There are no more empty cells.
+        </div>
+
+        <div className={ classNames('alert alert-danger', { hidden: prize !== -100 }) } role='alert'>
+          <span className='text-capitalize'>{ current }</span> lost!
         </div>
       </div>
     );
@@ -183,7 +238,12 @@ class Board extends Component {
               <button
                 type='button'
                 className='btn btn-default'
-                onClick={ this._toggleModal.bind(this) }
+                onClick={
+                  () => {
+                    this._toggleModal();
+                    this._autoMove();
+                  }
+                }
               >
                 No
               </button>

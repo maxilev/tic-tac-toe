@@ -2,7 +2,7 @@ import jsdom from 'jsdom';
 
 // Tell `require` calls to look into `/app` also
 // it will avoid `../../../../../` require strings
-process.env.NODE_PATH = 'app/scripts:test';
+process.env.NODE_PATH = 'app/scripts:spec/javascripts';
 require('module').Module._initPaths();
 
 const doc = jsdom.jsdom('<!doctype html><html><body></body></html>');
