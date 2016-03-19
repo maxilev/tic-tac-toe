@@ -24,13 +24,35 @@ describe('Board', () => {
     expect(cells.length).to.equal(size * size);
   });
 
-  it('marks cell with human value if cell is available', () => {
-    const { game } = component.state;
+  describe('#makeMove', () => {
     const idx = 0;
-    const value = 'x';
 
-    expect(game.state(idx)).to.equal(null);
-    component._play(idx);
-    expect(game.state(idx)).to.equal(value);
+    it('marks cell with class name of current user', () => {
+      const { board, current } = component.state;
+
+      expect(board[idx]).to.equal('blank');
+      component._makeMove(idx);
+      expect(board[idx]).to.equal(Board.players[current]);
+    });
+
+    it('changes current user', () => {
+      const { current } = component.state;
+      component._makeMove(idx);
+      expect(component.state.current).not.to.equal(current);
+    });
+  });
+
+  describe('#reset', () => {
+    beforeEach(() => {
+      component._makeMove(0);
+    });
+
+    it('starts new game', () => {
+      const type = 'cross';
+
+      expect(component.state.board.indexOf(type)).not.to.equal(-1);
+      component._reset();
+      expect(component.state.board.indexOf(type)).to.equal(-1);
+    });
   });
 });

@@ -1,8 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import classNames from 'classnames';
 
-import Game from 'utils/game';
-
 class Board extends Component {
 
   static propTypes = {
@@ -13,41 +11,71 @@ class Board extends Component {
     size: 3
   };
 
+  static players = {
+    player1: 'cross',
+    player2: 'zero'
+  };
+
   constructor(props, context) {
     super(props, context);
-
-    this.state = {
-      game: new Game()
-    };
+    this.state = this._defaultState();
   }
 
-  _play(idx) {
-    const { game } = this.state;
-    game.play(idx);
-    this.setState({ game });
+  _defaultState() {
+    const { size } = this.props;
+
+    return {
+      board: Array(size * size).fill('blank'),
+      current: Object.keys(Board.players)[0],
+      mode: null
+    }
+  }
+
+  _makeMove(idx) {
+    const { board, current } = this.state;
+    const players = Object.keys(Board.players);
+    const next = players[(players.indexOf(current) + 1) % players.length];
+
+    if (board[idx] !== 'blank') {
+      return;
+    }
+
+    board[idx] = Board.players[current];
+    this.setState({ board, current: next });
+  }
+
+  _reset() {
+    this.setState(this._defaultState());
+  }
+
+  _chooseMode(mode) {
+    this.setState({ mode });
   }
 
   render() {
+    return (
+      <div className='board'>
+        <div className='container-fluid'>
+          { this.renderAlerts() }
+          { this.renderActions() }
+          { this.renderBoard() }
+        </div>
+      </div>
+    );
+  }
+
+  renderBoard() {
     const { size } = this.props;
-    const { game } = this.state;
-    const prize = game.prize();
+    const { current, mode } = this.state;
 
     const rows = Array(size).fill(null).map((value, idx) => {
       return this.renderRow(idx);
     });
 
     return (
-      <div className='container'>
-        <div className='row'>
-          <div className='board col-lg-6 col-lg-offset-3 col-sm-8 col-sm-offset-2 col-xs-12'>
-            <div className={ classNames('alert alert-danger text-center', { hidden: !prize }) } role='alert'>
-              You lost!
-            </div>
-
-            <div className='board-rows'>
-              { rows }
-            </div>
-          </div>
+      <div className='row'>
+        <div className={ classNames('board-rows', `hover-${Board.players[current]}`, { disabled: !mode }) }>
+          { rows }
         </div>
       </div>
     );
@@ -67,21 +95,68 @@ class Board extends Component {
   }
 
   renderCell(idx) {
-    const { game } = this.state;
-    const state = game.state(idx);
+    const { board } = this.state;
+    const state = board[idx];
 
     return (
       <div key={ idx } className='col-xs-4'>
         <span
-          className={
-            classNames('board-cell', {
-              blank: !state,
-              cross: state === 'x',
-              zero: state === 'o'
-            })
-          }
-          onClick={ this._play.bind(this, idx) }
+          className={ classNames('board-cell', board[idx]) }
+          onClick={ this._makeMove.bind(this, idx) }
         ></span>
+      </div>
+    );
+  }
+
+  renderActions() {
+    const { mode } = this.state;
+
+    return (
+      <div className='row text-center'>
+        <div className='btn-toolbar actions'>
+          <div className='btn-group' role='group'>
+            <button
+              type='button'
+              className='btn btn-primary'
+              disabled={ !mode }
+              onClick={ this._reset.bind(this) }
+            >
+              New game
+            </button>
+          </div>
+
+          <div className='btn-group' role='group'>
+            <button
+              type='button'
+              className={ classNames('btn btn-default', { active: mode === 'single' }) }
+              disabled={ !!mode }
+              onClick={ this._chooseMode.bind(this, 'single') }
+            >
+              1 player
+            </button>
+
+            <button
+              type='button'
+              className={ classNames('btn btn-default', { active: mode === 'multiple' }) }
+              disabled={ !!mode }
+              onClick={ this._chooseMode.bind(this, 'multiple') }
+            >
+              2 players
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  renderAlerts() {
+    const { mode } = this.state;
+
+    return (
+      <div className='row text-center'>
+        <div className={ classNames('alert alert-info', { hidden: !!mode }) } role='alert'>
+          Choose number of players to start
+        </div>
       </div>
     );
   }
