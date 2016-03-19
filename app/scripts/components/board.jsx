@@ -27,7 +27,8 @@ class Board extends Component {
     return {
       board: Array(size * size).fill('blank'),
       current: Object.keys(Board.players)[0],
-      mode: null
+      mode: null,
+      modalVisible: false
     }
   }
 
@@ -49,7 +50,12 @@ class Board extends Component {
   }
 
   _chooseMode(mode) {
-    this.setState({ mode });
+    this.setState({ mode, modalVisible: mode === 'single' });
+  }
+
+  _toggleModal() {
+    const modalVisible = !this.state.modalVisible;
+    this.setState({ modalVisible });
   }
 
   render() {
@@ -59,6 +65,7 @@ class Board extends Component {
           { this.renderAlerts() }
           { this.renderActions() }
           { this.renderBoard() }
+          { this.renderModal() }
         </div>
       </div>
     );
@@ -156,6 +163,40 @@ class Board extends Component {
       <div className='row text-center'>
         <div className={ classNames('alert alert-info', { hidden: !!mode }) } role='alert'>
           Choose number of players to start
+        </div>
+      </div>
+    );
+  }
+
+  renderModal() {
+    const { modalVisible } = this.state;
+
+    return (
+      <div className={ classNames('modal fade text-center', { visible: modalVisible }) } tabIndex='-1' role='dialog'>
+        <div className='modal-dialog modal-sm'>
+          <div className='modal-content'>
+            <div className='modal-body'>
+              <p>Do you want to start first?</p>
+            </div>
+
+            <div className='modal-footer'>
+              <button
+                type='button'
+                className='btn btn-default'
+                onClick={ this._toggleModal.bind(this) }
+              >
+                No
+              </button>
+
+              <button
+                type='button'
+                className='btn btn-primary'
+                onClick={ this._toggleModal.bind(this) }
+              >
+                Yes
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
